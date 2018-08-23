@@ -40,7 +40,11 @@ static inline int parse_ipv4(struct xdp_md *ctx, u64 nh_off) {
         if (ip_header_length < sizeof(*iph)){
             return XDP_DROP;
         }
+	    
         struct tcphdr *tcph = data + nh_off + sizeof(*iph);
+	if (tcph + 1 > data_end)
+            return XDP_DROP;
+
         // calculate tcp header length
         // e.g tcph->doff = 5; tcp header length = 5x4 =20
         tcp_header_length = tcph->doff << 2;
