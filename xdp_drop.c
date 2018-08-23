@@ -40,7 +40,6 @@ static inline int parse_ipv4(struct xdp_md *ctx, u64 nh_off) {
         if (ip_header_length < sizeof(*iph)){
             return XDP_DROP;
         }
-
         struct tcphdr *tcph = data + nh_off + sizeof(*iph);
         // calculate tcp header length
         // e.g tcph->doff = 5; tcp header length = 5x4 =20
@@ -52,53 +51,36 @@ static inline int parse_ipv4(struct xdp_md *ctx, u64 nh_off) {
         //minimum length of http request is always geater than 7 bytes
         //avoid invalid access memory
         //include empty payload
-        if (payload_length < 7)
-            return XDP_DROP;
-    
-        //load first 7 byte of payload into p (payload_array)
-        //direct access to skb not allowed
-        unsigned long p[7];
-        int i = 0;
-        int j = 0;
-        const int last_index = payload_offset + 7;
-        //return XDP_PASS;
-        for (i = payload_offset ; i < last_index ; i++) {
-            p[j] = load_byte(data, i);
-            j++;
-        }
+        if (payload_length >= 7)
+		{   
+            //load first 7 byte of payload into p (payload_array)
+        	//direct access to skb not allowed
+        	unsigned long p[7];
+        	int i = 0;
+        	int j = 0;
+        	const int last_index = payload_offset + 7;
+        	for (i = payload_offset ; i < last_index ; i++) {
+            	p[j] = load_byte(data, i);
+            	j++;
+       	 	}
 
-        //bpf_trace_printk("xdp %d", p[0]);
-        //find a match with an HTTP message
-        //HTTP
-        if ((p[0] == 'H') && (p[1] == 'T') && (p[2] == 'T') && (p[3] == 'P')) {
-            return XDP_PASS;
-        }
-        //GET
-        if ((p[0] == 'G') && (p[1] == 'E') && (p[2] == 'T')) {
-            return XDP_PASS;
-        }
-
-        //POST
-        if ((p[0] == 'P') && (p[1] == 'O') && (p[2] == 'S') && (p[3] == 'T')) {
-            return XDP_PASS;
-        }
-        //PUT
-        if ((p[0] == 'P') && (p[1] == 'U') && (p[2] == 'T')) {
-            return XDP_PASS;
-        }
-        //DELETE
-        if ((p[0] == 'D') && (p[1] == 'E') && (p[2] == 'L') && (p[3] == 'E') && (p[4] == 'T') && (p[5] == 'E')) {
-            return XDP_PASS;
-        }
-        //HEAD
-        if ((p[0] == 'H') && (p[1] == 'E') && (p[2] == 'A') && (p[3] == 'D')) {
-            return XDP_PASS;
-        }
-
-    }
-    else
-        return XDP_PASS;
-
+        	//bpf_trace_printk("xdp %d", p[0]);
+        	//find a match with an HTTP message
+        	//HTTP
+        	if ((p[0] == 'H') && (p[1] == 'T') && (p[2] == 'T') && (p[3] == 'P')) {
+            	return XDP_PASS;
+        	}
+        	//GET
+        	if ((p[0] == 'G') && (p[1] == 'E') && (p[2] == 'T')) {
+            	return XDP_PASS;
+        	}
+        	//POST
+        	if ((p[0] == 'P') && (p[1] == 'O') && (p[2] == 'S') && (p[3] == 'T')) {
+            	return XDP_PASS;
+        	}
+		}
+    } 
+	return XDP_PASS;
 }
 
 int xdp_prog1(struct xdp_md *ctx) {
@@ -107,6 +89,7 @@ int xdp_prog1(struct xdp_md *ctx) {
     struct ethhdr *eth = data;
 
     int rc = XDP_PASS;
+	int result = 0;
     u16 h_proto;
     u64 nh_off = 0;
     nh_off = sizeof(*eth);
@@ -137,8 +120,9 @@ int xdp_prog1(struct xdp_md *ctx) {
 
     // filter ip packets (ethernet type = 0x0800)
     if (h_proto == htons(ETH_P_IP))
-        return parse_ipv4(ctx, nh_off)
-    else
-        return rc;
+	{
+        return parse_ipv4(ctx, nh_off);
+	}
 
+	return rc;
 }
