@@ -49,7 +49,7 @@ int xdp_prog1(struct xdp_md *ctx) {
         return XDP_DROP;
     }
 
-    struct tcphdr *tcph = data + nh_off;
+    struct tcphdr *tcph = data + nh_off + sizeof(*iph);
     // calculate tcp header length
     // e.g tcph->doff = 5; tcp header length = 5x4 =20
     tcp_header_length = tcph->doff << 2;
@@ -60,8 +60,8 @@ int xdp_prog1(struct xdp_md *ctx) {
     //minimum length of http request is always geater than 7 bytes
     //avoid invalid access memory
     //include empty payload
-    //if (payload_length < 7)
-    //    return XDP_DROP;
+    if (payload_length < 7)
+        return XDP_DROP;
 
     //load first 7 byte of payload into p (payload_array)
     //direct access to skb not allowed
@@ -69,7 +69,7 @@ int xdp_prog1(struct xdp_md *ctx) {
     int i = 0;
     int j = 0;
     const int last_index = payload_offset + 7;
-    return XDP_PASS;
+    //return XDP_PASS;
     for (i = payload_offset ; i < last_index ; i++) {
         p[j] = load_byte(data, i);
         j++;
