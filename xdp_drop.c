@@ -81,11 +81,11 @@ static inline int parse_ipv4(struct CTXTYPE *ctx, u64 nh_off) {
         	//find a match with an HTTP message
         	//HTTP
         	if ((p[0] == 'H') && (p[1] == 'T') && (p[2] == 'T') && (p[3] == 'P')) {
-            	return -11;
+            	return 0;
         	}
         	//GET
         	if ((p[0] == 'G') && (p[1] == 'E') && (p[2] == 'T')) {
-            	return 0;
+            	return -1;
         	}
         	//POST
         	if ((p[0] == 'P') && (p[1] == 'O') && (p[2] == 'S') && (p[3] == 'T')) {
