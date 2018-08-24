@@ -55,6 +55,7 @@ action_map = b.get_table("action_map")
 print("Printing dropping!")
 while 1:
     try:
+        b.trace_print()
         time.sleep(1)
     except KeyboardInterrupt:
         print("Removing filter from device")

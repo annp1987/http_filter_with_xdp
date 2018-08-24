@@ -49,6 +49,7 @@ static inline int parse_ipv4(struct CTXTYPE *ctx, u64 nh_off) {
         // calculate tcp header length
         // e.g tcph->doff = 5; tcp header length = 5x4 =20
         tcp_header_length = tcph->doff << 2;
+
         payload_offset = ETH_HLEN + ip_header_length + tcp_header_length;
         payload_length = ip_total_length - ip_header_length - tcp_header_length;
 
@@ -69,15 +70,22 @@ static inline int parse_ipv4(struct CTXTYPE *ctx, u64 nh_off) {
             	j++;
        	 	}
 
-        	//bpf_trace_printk("xdp %d", p[0]);
+            bpf_trace_printk("---------------\n");
+        	bpf_trace_printk("p[0] %lu \n", p[0]);
+		    bpf_trace_printk("p[1] %lu \n", p[1]);
+		    bpf_trace_printk("p[2] %lu \n", p[2]);
+            bpf_trace_printk("p[3] %lu \n", p[3]);
+            bpf_trace_printk("p[4] %lu \n", p[4]);
+            bpf_trace_printk("p[5] %lu \n", p[5]);
+            bpf_trace_printk("p[6] %lu \n", p[6]);
         	//find a match with an HTTP message
         	//HTTP
         	if ((p[0] == 'H') && (p[1] == 'T') && (p[2] == 'T') && (p[3] == 'P')) {
-            	return -1;
+            	return -11;
         	}
         	//GET
         	if ((p[0] == 'G') && (p[1] == 'E') && (p[2] == 'T')) {
-            	return -1;
+            	return 0;
         	}
         	//POST
         	if ((p[0] == 'P') && (p[1] == 'O') && (p[2] == 'S') && (p[3] == 'T')) {
