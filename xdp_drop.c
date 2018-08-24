@@ -43,7 +43,7 @@ static inline int parse_ipv4(struct CTXTYPE *ctx, u64 nh_off) {
 	    
         struct tcphdr *tcph = data + nh_off + sizeof(*iph);
 
-	    if (tcph + 1 > data_end)
+		if (tcph + 1 > data_end)
             return 0;
 
         // calculate tcp header length
@@ -60,7 +60,7 @@ static inline int parse_ipv4(struct CTXTYPE *ctx, u64 nh_off) {
         if (payload_length >= 7)
 		{   
             //load first 7 byte of payload into p (payload_array)
-        	//direct access to skb not allowed
+            //direct access to skb not allowed
         	unsigned long p[7];
         	int i = 0;
         	int j = 0;
@@ -81,17 +81,29 @@ static inline int parse_ipv4(struct CTXTYPE *ctx, u64 nh_off) {
         	//find a match with an HTTP message
         	//HTTP
         	if ((p[0] == 'H') && (p[1] == 'T') && (p[2] == 'T') && (p[3] == 'P')) {
-            	return 0;
-        	}
-        	//GET
-        	if ((p[0] == 'G') && (p[1] == 'E') && (p[2] == 'T')) {
             	return -1;
+        	}
+        	//Drop GET method
+        	if ((p[0] == 'G') && (p[1] == 'E') && (p[2] == 'T')) {
+            	return 0;
         	}
         	//POST
         	if ((p[0] == 'P') && (p[1] == 'O') && (p[2] == 'S') && (p[3] == 'T')) {
             	return -1;
         	}
-		}
+			//PUT
+			if ((p[0] == 'P') && (p[1] == 'U') && (p[2] == 'T')) {
+            	return -1;
+        	}
+			//DELETE
+			if ((p[0] == 'D') && (p[1] == 'E') && (p[2] == 'L') && (p[3] == 'E') && (p[4] == 'T') && (p[5] == 'E')) {
+				return -1;
+			}
+			//HEAD
+			if ((p[0] == 'H') && (p[1] == 'E') && (p[2] == 'A') && (p[3] == 'D')) {
+				return -1;
+			}
+		}	
     } 
 	return -1;
 }
