@@ -9,8 +9,8 @@
 
 #define IP_TCP 	6
 #define ETH_HLEN 14
-
-BPF_TABLE("percpu_array", uint32_t, long, action_map, 256);
+//hash key
+BPF_TABLE("hash", int, int, action_map, 256);
 
 static inline int parse_ipv4(struct CTXTYPE *ctx, u64 nh_off) {
 
@@ -69,7 +69,7 @@ static inline int parse_ipv4(struct CTXTYPE *ctx, u64 nh_off) {
             	p[j] = load_byte(ctx, i);
             	j++;
        	 	}
-
+			int* value;
             bpf_trace_printk("---------------\n");
         	bpf_trace_printk("p[0] %lu \n", p[0]);
 		    bpf_trace_printk("p[1] %lu \n", p[1]);
@@ -81,31 +81,51 @@ static inline int parse_ipv4(struct CTXTYPE *ctx, u64 nh_off) {
         	//find a match with an HTTP message
         	//HTTP
         	if ((p[0] == 'H') && (p[1] == 'T') && (p[2] == 'T') && (p[3] == 'P')) {
-            	return -1;
+				int HTTP = 1;
+				value = action_map.lookup(&HTTP);
+				if (value)
+					goto DROP;
         	}
         	//Drop GET method
         	if ((p[0] == 'G') && (p[1] == 'E') && (p[2] == 'T')) {
-            	return 0;
+				int GET = 2;
+            	value = action_map.lookup(&GET);
+				if (value)
+					goto DROP;
         	}
         	//POST
         	if ((p[0] == 'P') && (p[1] == 'O') && (p[2] == 'S') && (p[3] == 'T')) {
-            	return -1;
+            	int POST = 3;
+				value = action_map.lookup(&POST);
+				if (value)
+					goto DROP;
         	}
 			//PUT
 			if ((p[0] == 'P') && (p[1] == 'U') && (p[2] == 'T')) {
-            	return -1;
+				int PUT = 4;
+            	value = action_map.lookup(&PUT);
+				if (value)
+					goto DROP;
         	}
 			//DELETE
 			if ((p[0] == 'D') && (p[1] == 'E') && (p[2] == 'L') && (p[3] == 'E') && (p[4] == 'T') && (p[5] == 'E')) {
-				return -1;
+				int DELETE=5;
+				value = action_map.lookup(&DELETE);
+				if (value)
+					goto DROP;
 			}
 			//HEAD
 			if ((p[0] == 'H') && (p[1] == 'E') && (p[2] == 'A') && (p[3] == 'D')) {
-				return -1;
+				int HEAD=6;
+				value = action_map.lookup(&HEAD);
+				if (value)
+					goto DROP;
 			}
 		}	
     } 
 	return -1;
+	DROP:
+		return 0;
 }
 
 int xdp_prog1(struct CTXTYPE  *ctx) {
