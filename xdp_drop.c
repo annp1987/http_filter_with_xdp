@@ -12,7 +12,7 @@
 
 BPF_TABLE("percpu_array", uint32_t, long, action_map, 256);
 
-static inline int parse_ipv4(struct xdp_md *ctx, u64 nh_off) {
+static inline int parse_ipv4(struct CTXTYPE *ctx, u64 nh_off) {
 
     void* data_end = (void*)(long)ctx->data_end;
     void* data = (void*)(long)ctx->data;
@@ -20,7 +20,7 @@ static inline int parse_ipv4(struct xdp_md *ctx, u64 nh_off) {
     struct iphdr *iph = data + nh_off;
 
     if (iph + 1 > data_end)
-        return XDP_DROP;
+        return 0;
 
     //filter tcp packets (ip next protocol = 0x06)
     if (iph->protocol == IPPROTO_TCP)
@@ -38,12 +38,13 @@ static inline int parse_ipv4(struct xdp_md *ctx, u64 nh_off) {
 
         // check ip header length
         if (ip_header_length < sizeof(*iph)){
-            return XDP_DROP;
+            return 0;
         }
 	    
         struct tcphdr *tcph = data + nh_off + sizeof(*iph);
-	if (tcph + 1 > data_end)
-            return XDP_DROP;
+
+	    if (tcph + 1 > data_end)
+            return 0;
 
         // calculate tcp header length
         // e.g tcph->doff = 5; tcp header length = 5x4 =20
@@ -64,7 +65,7 @@ static inline int parse_ipv4(struct xdp_md *ctx, u64 nh_off) {
         	int j = 0;
         	const int last_index = payload_offset + 7;
         	for (i = payload_offset ; i < last_index ; i++) {
-            	p[j] = load_byte(data, i);
+            	p[j] = load_byte(ctx, i);
             	j++;
        	 	}
 
@@ -72,27 +73,27 @@ static inline int parse_ipv4(struct xdp_md *ctx, u64 nh_off) {
         	//find a match with an HTTP message
         	//HTTP
         	if ((p[0] == 'H') && (p[1] == 'T') && (p[2] == 'T') && (p[3] == 'P')) {
-            	return XDP_PASS;
+            	return -1;
         	}
         	//GET
         	if ((p[0] == 'G') && (p[1] == 'E') && (p[2] == 'T')) {
-            	return XDP_PASS;
+            	return -1;
         	}
         	//POST
         	if ((p[0] == 'P') && (p[1] == 'O') && (p[2] == 'S') && (p[3] == 'T')) {
-            	return XDP_PASS;
+            	return -1;
         	}
 		}
     } 
-	return XDP_PASS;
+	return -1;
 }
 
-int xdp_prog1(struct xdp_md *ctx) {
+int xdp_prog1(struct CTXTYPE  *ctx) {
     void* data_end = (void*)(long)ctx->data_end;
     void* data = (void*)(long)ctx->data;
     struct ethhdr *eth = data;
 
-    int rc = XDP_PASS;
+    int rc = RETURNCODE;
 	int result = 0;
     u16 h_proto;
     u64 nh_off = 0;
@@ -125,7 +126,16 @@ int xdp_prog1(struct xdp_md *ctx) {
     // filter ip packets (ethernet type = 0x0800)
     if (h_proto == htons(ETH_P_IP))
 	{
-        return parse_ipv4(ctx, nh_off);
+        result = parse_ipv4(ctx, nh_off);
+        if (result == -1)
+        {
+            return rc;
+        }
+        else
+        {
+            return TC_ACT_SHOT;
+        }
+
 	}
 
 	return rc;
