@@ -49,13 +49,34 @@ else:
     ip.tc("add-filter", "bpf", idx, ":1", fd=fn.fd, name=fn.name,
           parent="ffff:fff2", classid=1, direct_action=True)
 
+method_map = {
+    'HTTP': int(1),
+    'GET': int(2),
+    'POST': int(3),
+    'PUT': int(4),
+    'DELETE': int(5),
+    'HEAD': int(6),
+}
 # get map table
-action_map = b.get_table("action_map")
+bl = b.get_table("action_map")
 
 print("Printing dropping!")
 while 1:
     try:
-        b.trace_print()
+        print("block method: ")
+        method = raw_input("> ")
+        key = method_map.get(method)
+        if key:
+            bl[bl.Key(key)] = bl.Leaf(1)
+        print("unblock method: ")
+        method = raw_input("> ")
+        key = method_map.get(method)
+        if key:
+            try:
+                del bl[bl.Key(key)]
+            except Exception:
+                pass
+        #b.trace_print()
         time.sleep(1)
     except KeyboardInterrupt:
         print("Removing filter from device")
